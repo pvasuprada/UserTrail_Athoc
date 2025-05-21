@@ -1,12 +1,15 @@
-# React + Vite
+npm install to install the dependencies
+npm start to start the development server
+npm run build to build the production version
+npm run lint to run the linting
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Provide user trail on map using esri library. --- DONE
+Blue dotted line - semi transparent color -— DONE
+Line arrows for directions - light blue color
+show text on top of User marker - DONE
+Add a toggle button in the map to enable and disable trail --- DONE
+Have a provision to enable user trail for multiple users.
+When we click on the user marker should show the Lat, long values and the physical address in the popup. ——DONE
+When user trail is enabled zoom and click on “Zoom To” , the high level zoom should cover the all the points of user trail rather than navigate to last stable position.
+In case of user(s) clustering , show the list of users in the popup.
+For clustering , implement the group icon.

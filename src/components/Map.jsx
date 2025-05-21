@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Map from "@arcgis/core/Map";
 import MapView from "@arcgis/core/views/MapView";
 import esriConfig from "@arcgis/core/config";
@@ -8,16 +8,18 @@ import Graphic from "@arcgis/core/Graphic";
 import Point from "@arcgis/core/geometry/Point";
 import PictureMarkerSymbol from "@arcgis/core/symbols/PictureMarkerSymbol";
 import PopupTemplate from "@arcgis/core/PopupTemplate";
+import Polyline from "@arcgis/core/geometry/Polyline";
 import { geojsonData } from "../userslocations/alluserslocations";
-// Set the base URL for ArcGIS API assets
+import TextSymbol from "@arcgis/core/symbols/TextSymbol";
 esriConfig.assetsPath = "https://js.arcgis.com/4.28/@arcgis/core/assets";
 
 const ArcGISMap = () => {
   const mapDiv = useRef(null);
+  const [showTrail, setShowTrail] = useState(false);
+  const viewRef = useRef(null);
 
   useEffect(() => {
     if (mapDiv.current) {
-      // Create OSM basemap
       const osmBasemap = new Basemap({
         baseLayers: [
           new WebTileLayer({
@@ -48,7 +50,10 @@ const ArcGISMap = () => {
         },
       });
 
+      viewRef.current = view;
+
       addUserLocationMarkers(view);
+      showUserTrail(view);
 
       return () => {
         if (view) {
@@ -57,6 +62,12 @@ const ArcGISMap = () => {
       };
     }
   }, []);
+
+  useEffect(() => {
+    if (viewRef.current) {
+      showUserTrail(viewRef.current);
+    }
+  }, [showTrail]);
 
   const addUserLocationMarkers = async (view) => {
     // Create SVG data URLs for different colors
@@ -180,9 +191,26 @@ const ArcGISMap = () => {
           address: "Loading address...",
         },
         popupTemplate: popupTemplate,
+        text: feature.properties.user,
       });
 
-      view.graphics.add(graphic);
+      const textSymbol = new TextSymbol({
+        text: feature.properties.user,
+        color: "black",
+        haloColor: "white",
+        haloSize: "1px",
+        yoffset: 15, // pushes the text above the marker
+        font: {
+          size: 10,
+          family: "sans-serif",
+        },
+      });
+
+      const textGraphic = new Graphic({
+        geometry: point,
+        symbol: textSymbol,
+      });
+      view.graphics.addMany([graphic, textGraphic]);
 
       // Fetch and update address asynchronously
       try {
@@ -207,19 +235,88 @@ const ArcGISMap = () => {
     view.goTo(allPoints, { padding: 50 });
   };
 
+  const showUserTrail = (view) => {
+    // Remove existing trails
+    view.graphics.removeMany(
+      view.graphics.filter((g) => g.attributes?.type === "trail")
+    );
+
+    if (!showTrail) return;
+
+    // Create trails for each user
+    const userGroups = {};
+    geojsonData.features.forEach((feature) => {
+      const user = feature.properties.user;
+      if (!userGroups[user]) {
+        userGroups[user] = [];
+      }
+      userGroups[user].push(feature.geometry.coordinates);
+    });
+
+    // Draw trail for each user
+    Object.entries(userGroups).forEach(([user, coordinates]) => {
+      const paths = coordinates;
+      const polyline = new Polyline({
+        paths: [paths],
+        spatialReference: { wkid: 4326 },
+      });
+
+      const trailGraphic = new Graphic({
+        geometry: polyline,
+        symbol: {
+          type: "simple-line",
+          color: user === "A" ? [255, 0, 0, 0.5] : [0, 0, 255, 0.5],
+          width: 2,
+          style: "dash",
+        },
+        attributes: {
+          type: "trail",
+          user: user,
+        },
+      });
+
+      view.graphics.add(trailGraphic);
+    });
+  };
+
   return (
-    <div
-      ref={mapDiv}
-      style={{
-        width: "100%",
-        height: "100%",
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0,
-      }}
-    />
+    <>
+      <div
+        ref={mapDiv}
+        style={{
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: "20px",
+          right: "20px",
+          zIndex: 1000,
+        }}
+      >
+        <button
+          onClick={() => setShowTrail(!showTrail)}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: showTrail ? "#4CAF50" : "#f44336",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+          }}
+        >
+          {showTrail ? "Hide Trail" : "Show Trail"}
+        </button>
+      </div>
+    </>
   );
 };
 
