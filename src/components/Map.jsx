@@ -18,6 +18,15 @@ const ArcGISMap = () => {
   const [showTrail, setShowTrail] = useState(false);
   const viewRef = useRef(null);
 
+  const userColors = {
+    A: "#FF0000", // Red
+    B: "#0000FF", // Blue
+    C: "#00FF00", // Green
+    D: "#FFA500", // Orange
+    E: "#800080", // Purple
+    F: "#008080", // Teal
+  };
+
   useEffect(() => {
     if (mapDiv.current) {
       const osmBasemap = new Basemap({
@@ -81,16 +90,13 @@ const ArcGISMap = () => {
       return `data:image/svg+xml;base64,${btoa(svg)}`;
     };
 
-    const symbolA = new PictureMarkerSymbol({
-      url: createColoredSvgUrl("#FF0000"),
-      width: "32px",
-      height: "32px",
-    });
-
-    const symbolB = new PictureMarkerSymbol({
-      url: createColoredSvgUrl("#0000FF"),
-      width: "32px",
-      height: "32px",
+    const userSymbols = {};
+    Object.entries(userColors).forEach(([user, color]) => {
+      userSymbols[user] = new PictureMarkerSymbol({
+        url: createColoredSvgUrl(color),
+        width: "32px",
+        height: "32px",
+      });
     });
 
     const popupTemplate = new PopupTemplate({
@@ -178,7 +184,7 @@ const ArcGISMap = () => {
 
       const graphic = new Graphic({
         geometry: point,
-        symbol: feature.properties.user === "A" ? symbolA : symbolB,
+        symbol: userSymbols[feature.properties.user],
         attributes: {
           user: feature.properties.user,
           longitude: feature.geometry.coordinates[0],
@@ -194,7 +200,7 @@ const ArcGISMap = () => {
         color: "black",
         haloColor: "white",
         haloSize: "1px",
-        yoffset: 15, // pushes the text above the marker
+        yoffset: 15,
         font: {
           size: 10,
           family: "sans-serif",
@@ -207,7 +213,6 @@ const ArcGISMap = () => {
       });
       view.graphics.addMany([graphic, textGraphic]);
 
-      // Fetch and update address asynchronously
       try {
         const address = await getThrottledAddress(
           feature.geometry.coordinates[0],
@@ -220,7 +225,6 @@ const ArcGISMap = () => {
       }
     }
 
-    // Zoom to all graphics
     const allPoints = geojsonData.features.map((feature) => ({
       type: "point",
       longitude: feature.geometry.coordinates[0],
@@ -257,7 +261,7 @@ const ArcGISMap = () => {
         geometry: polyline,
         symbol: {
           type: "simple-line",
-          color: user === "A" ? [255, 0, 0, 0.5] : [0, 0, 255, 0.5],
+          color: [...hexToRgb(userColors[user]), 0.5],
           width: 4,
           style: "short-dot",
         },
@@ -269,6 +273,17 @@ const ArcGISMap = () => {
 
       view.graphics.add(trailGraphic);
     });
+  };
+
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? [
+          parseInt(result[1], 16),
+          parseInt(result[2], 16),
+          parseInt(result[3], 16),
+        ]
+      : [0, 0, 0];
   };
 
   const zoomToUsers = () => {
