@@ -70,7 +70,6 @@ const ArcGISMap = () => {
   }, [showTrail]);
 
   const addUserLocationMarkers = async (view) => {
-    // Create SVG data URLs for different colors
     const createColoredSvgUrl = (color) => {
       const svg = `<?xml version="1.0" encoding="UTF-8"?>
         <svg width="32" height="32" version="1.1" viewBox="0 0 53.545 53.545" xmlns="http://www.w3.org/2000/svg">
@@ -82,7 +81,6 @@ const ArcGISMap = () => {
       return `data:image/svg+xml;base64,${btoa(svg)}`;
     };
 
-    // Create symbols for users A and B
     const symbolA = new PictureMarkerSymbol({
       url: createColoredSvgUrl("#FF0000"),
       width: "32px",
@@ -95,7 +93,6 @@ const ArcGISMap = () => {
       height: "32px",
     });
 
-    // Create popup template
     const popupTemplate = new PopupTemplate({
       title: "User Location Details",
       content: [
@@ -173,14 +170,12 @@ const ArcGISMap = () => {
       }
     };
 
-    // Add points and fetch addresses
     for (const feature of geojsonData.features) {
       const point = new Point({
         longitude: feature.geometry.coordinates[0],
         latitude: feature.geometry.coordinates[1],
       });
 
-      // Create graphic with initial "Loading..." address
       const graphic = new Graphic({
         geometry: point,
         symbol: feature.properties.user === "A" ? symbolA : symbolB,
@@ -236,14 +231,12 @@ const ArcGISMap = () => {
   };
 
   const showUserTrail = (view) => {
-    // Remove existing trails
     view.graphics.removeMany(
       view.graphics.filter((g) => g.attributes?.type === "trail")
     );
 
     if (!showTrail) return;
 
-    // Create trails for each user
     const userGroups = {};
     geojsonData.features.forEach((feature) => {
       const user = feature.properties.user;
@@ -253,7 +246,6 @@ const ArcGISMap = () => {
       userGroups[user].push(feature.geometry.coordinates);
     });
 
-    // Draw trail for each user
     Object.entries(userGroups).forEach(([user, coordinates]) => {
       const paths = coordinates;
       const polyline = new Polyline({
@@ -266,8 +258,8 @@ const ArcGISMap = () => {
         symbol: {
           type: "simple-line",
           color: user === "A" ? [255, 0, 0, 0.5] : [0, 0, 255, 0.5],
-          width: 2,
-          style: "dash",
+          width: 4,
+          style: "short-dot",
         },
         attributes: {
           type: "trail",
@@ -277,6 +269,21 @@ const ArcGISMap = () => {
 
       view.graphics.add(trailGraphic);
     });
+  };
+
+  const zoomToUsers = () => {
+    if (!viewRef.current) return;
+
+    const allGraphics = viewRef.current.graphics.filter(
+      (graphic) => !graphic.symbol?.type?.includes("text")
+    );
+
+    if (allGraphics.length > 0) {
+      viewRef.current.goTo(allGraphics, {
+        padding: 50,
+        duration: 1000,
+      });
+    }
   };
 
   return (
@@ -299,6 +306,8 @@ const ArcGISMap = () => {
           top: "20px",
           right: "20px",
           zIndex: 1000,
+          display: "flex",
+          gap: "10px",
         }}
       >
         <button
@@ -314,6 +323,23 @@ const ArcGISMap = () => {
           }}
         >
           {showTrail ? "Hide Trail" : "Show Trail"}
+        </button>
+        <button
+          onClick={zoomToUsers}
+          style={{
+            padding: "8px 16px",
+            backgroundColor: "#2196F3",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+          }}
+        >
+          Zoom to Users
         </button>
       </div>
     </>
