@@ -99,6 +99,26 @@ const ArcGISMap = () => {
       });
     });
 
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const getThrottledAddress = async (longitude, latitude) => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+          {
+            headers: {
+              "User-Agent": "YourAppName/1.0 (your@email.com)",
+            },
+          }
+        );
+        const data = await response.json();
+        return data?.display_name || "Address not found";
+      } catch (error) {
+        console.error("Error fetching address:", error);
+        return "Address not found";
+      }
+    };
+
     const popupTemplate = new PopupTemplate({
       title: "User Location Details",
       content: [
@@ -134,49 +154,29 @@ const ArcGISMap = () => {
           ],
         },
       ],
+      actions: [],
     });
 
-    //Another Geocoding API - Not having good address - So deleted
-    const getAddress = async (longitude, latitude) => {
-      try {
-        const response = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+    // Add click event handler for address loading
+    view.on("click", async (event) => {
+      const response = await view.hitTest(event);
+      const graphic = response.results[0]?.graphic;
+
+      if (graphic?.attributes?.user && !graphic.attributes.addressLoaded) {
+        graphic.attributes.address = "Loading address...";
+        const address = await getThrottledAddress(
+          graphic.attributes.longitude,
+          graphic.attributes.latitude
         );
-        const data = await response.json();
-        console.log(data);
-        return (
-          data?.localityInfo?.administrative[
-            data?.localityInfo?.administrative.length - 1
-          ]?.name || "Address not found"
-        );
-      } catch (error) {
-        console.error("Error fetching address:", error);
-        return "Address not found";
+        graphic.attributes.address = address;
+        graphic.attributes.addressLoaded = true;
       }
-    };
+    });
 
-    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    const getThrottledAddress = async (longitude, latitude) => {
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-          {
-            headers: {
-              "User-Agent": "YourAppName/1.0 (your@email.com)",
-            },
-          }
-        );
-        const data = await response.json();
-        console.log("Fetched address:", data.display_name);
-        return data?.display_name || "Address not found";
-      } catch (error) {
-        console.error("Error fetching address:", error);
-        return "Address not found";
-      }
-    };
-
+    // Add markers one by one with animation
     for (const feature of geojsonData.features) {
+      await delay(300); // Wait 100ms between each marker
+
       const point = new Point({
         longitude: feature.geometry.coordinates[0],
         latitude: feature.geometry.coordinates[1],
@@ -189,10 +189,10 @@ const ArcGISMap = () => {
           user: feature.properties.user,
           longitude: feature.geometry.coordinates[0],
           latitude: feature.geometry.coordinates[1],
-          address: "Loading address...",
+          address: "Click to load address",
+          addressLoaded: false,
         },
         popupTemplate: popupTemplate,
-        text: feature.properties.user,
       });
 
       const textSymbol = new TextSymbol({
@@ -211,18 +211,8 @@ const ArcGISMap = () => {
         geometry: point,
         symbol: textSymbol,
       });
-      view.graphics.addMany([graphic, textGraphic]);
 
-      try {
-        const address = await getThrottledAddress(
-          feature.geometry.coordinates[0],
-          feature.geometry.coordinates[1]
-        );
-        graphic.attributes.address = address;
-        await delay(1000);
-      } catch (error) {
-        console.error("Error updating address:", error);
-      }
+      view.graphics.addMany([graphic, textGraphic]);
     }
 
     const allPoints = geojsonData.features.map((feature) => ({
@@ -241,19 +231,34 @@ const ArcGISMap = () => {
 
     if (!showTrail) return;
 
+    // Get only visible points
+    const visibleGraphics = view.graphics.filter((graphic) => {
+      return (
+        graphic.visible &&
+        graphic.attributes?.user &&
+        !graphic.symbol?.type?.includes("text")
+      );
+    });
+
+    // Group visible points by user
     const userGroups = {};
-    geojsonData.features.forEach((feature) => {
-      const user = feature.properties.user;
+    visibleGraphics.forEach((graphic) => {
+      const user = graphic.attributes.user;
       if (!userGroups[user]) {
         userGroups[user] = [];
       }
-      userGroups[user].push(feature.geometry.coordinates);
+      userGroups[user].push([
+        graphic.geometry.longitude,
+        graphic.geometry.latitude,
+      ]);
     });
 
+    // Draw trails for visible points
     Object.entries(userGroups).forEach(([user, coordinates]) => {
-      const paths = coordinates;
+      if (coordinates.length < 2) return; // Need at least 2 points for a trail
+
       const polyline = new Polyline({
-        paths: [paths],
+        paths: [coordinates],
         spatialReference: { wkid: 4326 },
       });
 
@@ -261,7 +266,7 @@ const ArcGISMap = () => {
         geometry: polyline,
         symbol: {
           type: "simple-line",
-          color: [...hexToRgb(userColors[user]), 0.5],
+          color: [...hexToRgb(userColors[user]), 0.6],
           width: 4,
           style: "short-dot",
         },
@@ -274,6 +279,17 @@ const ArcGISMap = () => {
       view.graphics.add(trailGraphic);
     });
   };
+
+  // Add view extent change handler to update trails
+  useEffect(() => {
+    if (viewRef.current) {
+      viewRef.current.watch("extent", () => {
+        if (showTrail) {
+          showUserTrail(viewRef.current);
+        }
+      });
+    }
+  }, [showTrail]);
 
   const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
