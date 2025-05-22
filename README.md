@@ -18,3 +18,16 @@ TODO:
 
 1. Snap to Road
 2. Arrow Directions
+
+Description :
+
+Initially two user locations should appear on the map (100ms to get new points).On click of "Show trail" should show the dotted line. (I have not removed the old user markers for better visualisation)On click of "Zoom to Users" should zoom to the extent of all users.On click of user markers give Address.In alluserslocations.js there is a User C code to test the functionality for 3 users.
+On zooming out to 13 and less, Group icon appears and popup shows user names.
+
+Files
+src/components/Map.jsx - Main map component
+src/components/MapControls.jsx - Map controls component
+src/constants/mapConstants.js - Constants
+src/hooks/useMapView.js - Custom hook for map view
+src/services/mapService.js - Map Service file
+src/utils/mapUtils.js - Utility functions
