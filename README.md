@@ -11,10 +11,10 @@ Add a toggle button in the map to enable and disable trail --- DONE
 Have a provision to enable user trail for multiple users. --- DONE
 When we click on the user marker should show the Lat, long values and the physical address in the popup. ——DONE
 When user trail is enabled zoom and click on “Zoom To” , the high level zoom should cover the all the points of user trail rather than navigate to last stable position. --- DONE
-In case of user(s) clustering , show the list of users in the popup.
-For clustering , implement the group icon.
+In case of user(s) clustering , show the list of users in the popup. --- DONE
+For clustering , implement the group icon. --- DONE
 
 TODO:
-User Clustering
-Arrow Directions
-Snap to Road
+
+1. Snap to Road
+2. Arrow Directions

@@ -194,45 +194,45 @@ export const geojsonData = {
         coordinates: [78.38615883074283, 17.45021447025725],
       },
     },
-    // {
-    //   type: "Feature",
-    //   properties: { user: "C" },
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [78.38199074507202, 17.452324305449352],
-    //   },
-    // },
-    // {
-    //   type: "Feature",
-    //   properties: { user: "C" },
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [78.38150075633956, 17.45182570956635],
-    //   },
-    // },
-    // {
-    //   type: "Feature",
-    //   properties: { user: "C" },
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [78.38166408591775, 17.45110897559492],
-    //   },
-    // },
-    // {
-    //   type: "Feature",
-    //   properties: { user: "C" },
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [78.38225207239628, 17.45045456385523],
-    //   },
-    // },
-    // {
-    //   type: "Feature",
-    //   properties: { user: "C" },
-    //   geometry: {
-    //     type: "Point",
-    //     coordinates: [78.38264406338055, 17.449893637637544],
-    //   },
-    // },
+    {
+      type: "Feature",
+      properties: { user: "C" },
+      geometry: {
+        type: "Point",
+        coordinates: [78.38199074507202, 17.452324305449352],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { user: "C" },
+      geometry: {
+        type: "Point",
+        coordinates: [78.38150075633956, 17.45182570956635],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { user: "C" },
+      geometry: {
+        type: "Point",
+        coordinates: [78.38166408591775, 17.45110897559492],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { user: "C" },
+      geometry: {
+        type: "Point",
+        coordinates: [78.38225207239628, 17.45045456385523],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { user: "C" },
+      geometry: {
+        type: "Point",
+        coordinates: [78.38264406338055, 17.449893637637544],
+      },
+    },
   ],
 };
